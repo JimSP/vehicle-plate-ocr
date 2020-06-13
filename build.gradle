@@ -1,0 +1,62 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.1.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+}
+
+group = 'br.com.cafebinario'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven{
+		url 'https://raw.github.com/JimSP/artifacts/master'
+	}
+	
+	jcenter{
+		url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/'
+	}
+	
+	maven{
+		url 'https://packages.atlassian.com/maven/repository/public'
+	}
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	compile group: 'org.openpnp', name: 'opencv', version: '4.3.0-2'
+	compile group: 'net.sourceforge.tess4j', name: 'tess4j', version: '4.5.1'
+	
+	compile 'br.com.cafebinario:logger-annotation:1.0.0-RELEASE'
+	
+	compile group: 'io.springfox', name: 'springfox-swagger2', version: '2.9.2'
+	compile group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.9.2'
+	
+	compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
+	compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
+	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+	compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
+	
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	
+	testImplementation 'io.projectreactor:reactor-test'
+}
+
+test {
+	useJUnitPlatform()
+}
