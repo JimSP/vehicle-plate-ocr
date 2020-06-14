@@ -3,9 +3,11 @@ package br.com.cafebinario.ocr;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
@@ -18,10 +20,7 @@ import org.opencv.core.Size;
 import org.opencv.dnn.Dnn;
 import org.opencv.dnn.Net;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.utils.Converters;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import lombok.SneakyThrows;
@@ -29,16 +28,11 @@ import lombok.SneakyThrows;
 @Component
 public class ImageObjectClassifier {
 	
-	@Autowired
-	@Qualifier("haarcascadeCar")
-	public CascadeClassifier haarcascadeCar;
-	
 	@SneakyThrows
-	public List<String> classifier(final InputStream inputStream, final String identifier) {
+	public List<ImageRecognitionResult> classifier(final InputStream inputStream, final String identifier) {
 		final File file = CreateFile.createFile(inputStream, identifier);
 
 		try {
-			//final Mat cvt = ToCvtTransform.toCvtMat(file, identifier);
 			final Mat origin = Imgcodecs.imread(file.getAbsolutePath());
 	        
 	        final String cfgFile = "data/yolov3.cfg";
@@ -47,7 +41,7 @@ public class ImageObjectClassifier {
 
 			final Size sz = new Size(416, 416);
 
-			final Mat blob = Dnn.blobFromImage(origin, 0.00392, sz, new Scalar(0), true, false);
+			final Mat blob = Dnn.blobFromImage(origin, 0.00392, sz, new Scalar(0), true, false, CvType.CV_32F);
 
 			net.setInput(blob);
 			
@@ -68,8 +62,9 @@ public class ImageObjectClassifier {
 	                Core.MinMaxLocResult mm = Core.minMaxLoc(scores);
 	                final float confidence = (float) mm.maxVal;
 	                final Point classIdPoint = mm.maxLoc;
+	                
 	                if (confidence > confThreshold) {
-	                	final int centerX = (int) (row.get(0, 0)[0] * origin.cols());
+	                	final int centerX = (int) (row.get(0, 0)[0] * origin.cols()); //scaling for drawing the bounding boxes//
 	                	final int centerY = (int) (row.get(0, 1)[0] * origin.rows());
 	                	final int width = (int) (row.get(0, 2)[0] * origin.cols());
 	                	final int height = (int) (row.get(0, 3)[0] * origin.rows());
@@ -78,35 +73,51 @@ public class ImageObjectClassifier {
 
 	                    clsIds.add((int) classIdPoint.x);
 	                    confs.add((float) confidence);
-	                    rects.add(new Rect(left, top, width, height));
+	                    rects.add(new Rect(new Point(left, top), new Point(width, height)));
 	                }
 	            }
 	        }
 	        final float nmsThresh = 0.5f;
-	        final MatOfFloat confidences = new MatOfFloat(Converters.vector_float_to_Mat(confs));
-	
-	        final Rect2d[] boxesArray = new Rect2d[rects.size()];
 	        
-	        int it = 0;
-	        for (Rect rect : rects) {
-	        	boxesArray[it++] = new Rect2d(rect.x, rect.y, rect.width, rect.height);
+	        try {
+	        	MatOfFloat confidences = new MatOfFloat(Converters.vector_float_to_Mat(confs));
+	        	
+	        	final Rect2d[] boxesArray = new Rect2d[rects.size()];
+		        
+		        int it = 0;
+		        for (Rect rect : rects) {
+		        	boxesArray[it++] = new Rect2d(rect.x, rect.y, rect.width, rect.height);
+				}
+		        
+		        final MatOfRect2d boxes = new MatOfRect2d(boxesArray);
+		        final MatOfInt indices = new MatOfInt();
+
+		        Dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThresh, indices);
+
+		        final int[] ind = indices.toArray();
+
+		        final List<ImageRecognitionResult> result = new ArrayList<>();
+		        for (int i = 0; i < ind.length; ++i) {
+		        	
+		        	int idx = ind[i];
+		            Rect2d box = boxesArray[idx];
+		            
+		            result.add(ImageRecognitionResult
+		            				.builder()
+		            				.label(CocoNames.get(clsIds.get(idx)))
+		            				.accuracy(confs.get(idx))
+		            				.x(box.tl().x)
+		            				.y(box.tl().y)
+		            				.width(box.br().x)
+		            				.height(box.br().y)
+		            				.build());
+		        }
+		        
+		        return result;
+	        	
+	        }catch (Exception e) {
+				return Collections.emptyList();
 			}
-	        
-	        final MatOfRect2d boxes = new MatOfRect2d(boxesArray);
-	        final MatOfInt indices = new MatOfInt();
-
-	        Dnn.NMSBoxes(boxes, confidences, confThreshold, nmsThresh, indices);
-
-	        final int[] ind = indices.toArray();
-
-	        final List<String> names = new ArrayList<>();
-	        for (int i = 0; i < ind.length; ++i) {
-	        	final int idx = ind[i];
-	            System.out.println(clsIds.get(i) + " | " + confs.get(i) + "%" + " | " + idx);
-	            names.add(CocoNames.get(idx) + " [" + confs.get(i) + "%]");
-	        }
-	        
-	        return names;
 			
 		}finally {
 			file.delete();

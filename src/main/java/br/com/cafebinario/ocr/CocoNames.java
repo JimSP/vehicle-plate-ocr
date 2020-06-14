@@ -6,7 +6,8 @@ public final class CocoNames {
 		
 	}
 
-	private static final String[] objects = {"person",
+	private static final String[] objects = {
+			"person",
 			"bicycle",
 			"car",
 			"motorbike",

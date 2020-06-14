@@ -27,16 +27,15 @@ public class OCRApi {
 	@Autowired
 	private ImageObjectClassifier imageObjectClassifier;
 	
-	@PostMapping("/{language}/imageRecognition")
+	@PostMapping("imageRecognition")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
-	public List<String> imageRecognition(
-			@PathVariable(name = "language", required = false) final Language language,
+	public List<ImageRecognitionResult> imageRecognition(
 			@RequestParam("file") final MultipartFile file) throws IOException {
 		
 		return imageObjectClassifier.classifier(file.getInputStream(), UUID.randomUUID().toString());
 	}
 	
-	@PostMapping("/{language}/ocr")
+	@PostMapping("ocr/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
 	public OcrResponse ocr(
 			@PathVariable(name = "language", required = false) final Language language,
@@ -60,7 +59,7 @@ public class OCRApi {
 				.build();
 	}
 	
-	@PostMapping("/{language}/ocr/car")
+	@PostMapping("/ocr/car/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
 	public OcrResponse ocrCarPlate(
 			@PathVariable(name = "language", required = false) final Language language,
@@ -84,7 +83,7 @@ public class OCRApi {
 				.build();
 	}
 	
-	@PostMapping("/{language}/ocr/motorcycle")
+	@PostMapping("ocr/motorbike/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
 	public OcrResponse loadPlateMotorcycle(
 			@PathVariable(name = "language", required = false) final Language language,
@@ -96,7 +95,7 @@ public class OCRApi {
 		
 		final String[] text = recognizeText.extractTextFromImage(file.getInputStream(), identifier, language);
 		
-		final List<String> result = ocrResultFilter.toResult(text, VehicleType.motorcycle);
+		final List<String> result = ocrResultFilter.toResult(text, VehicleType.motorbike);
 		
 		return OcrResponse
 				.builder()
