@@ -2,6 +2,7 @@ package br.com.cafebinario.ocr;
 
 import javax.annotation.PostConstruct;
 
+import org.opencv.objdetect.CascadeClassifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,5 +36,10 @@ public class OpenCVConfiguration {
 		tesseract.setHocr(false);
 		
 		return tesseract;
+	}
+	
+	@Bean("haarcascadeCar")
+	public CascadeClassifier haarcascadeCar() {
+		return new CascadeClassifier("data/haarcascade_car.xml");
 	}
 }
