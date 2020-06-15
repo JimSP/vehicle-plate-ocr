@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public final class OcrResponse implements Serializable {
+public final class OcrResult implements Serializable {
 
 	private static final long serialVersionUID = -2050522016190487676L;
 

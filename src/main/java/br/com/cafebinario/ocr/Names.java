@@ -1,11 +1,15 @@
 package br.com.cafebinario.ocr;
 
-public final class CocoNames {
+import java.util.Arrays;
+
+public final class Names {
 	
-	private CocoNames() {
+	private Names() {
 		
 	}
 
+	private static final String[] vehiclesTypes = {"bicycle", "car", "motorbike", "bus", "truck"};
+	
 	private static final String[] objects = {
 			"person",
 			"bicycle",
@@ -95,5 +99,16 @@ public final class CocoNames {
 		}
 		
 		return objects[idx];
+	}
+	
+	public static boolean isVehicle(final String name) {
+		
+		return Arrays
+					.asList(vehiclesTypes)
+					.stream()
+					.filter(predicate->predicate.equals(name))
+					.findFirst()
+					.map(mapper-> (OcrType) VehicleType.valueOf(mapper))
+					.isPresent();
 	}
 }

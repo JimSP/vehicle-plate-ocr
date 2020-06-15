@@ -1,6 +1,9 @@
 package br.com.cafebinario.ocr;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +19,7 @@ import br.com.cafebinario.logger.LogLevel;
 import br.com.cafebinario.logger.VerboseMode;
 
 @RestController
-public class OCRApi {
+public class VehicleClassifierApi {
 
 	@Autowired
 	private RecognizeText recognizeText;
@@ -26,6 +29,47 @@ public class OCRApi {
 	
 	@Autowired
 	private ImageObjectClassifier imageObjectClassifier;
+	
+	@PostMapping("classifier")
+	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
+	public ClassifierResult classifier(
+			@RequestParam("file") final MultipartFile file) throws IOException {
+		
+		
+		final Long begin = System.currentTimeMillis();
+		final String identifier = UUID.randomUUID().toString();
+		final byte[] image = file.getBytes();
+		
+		final String[] text = recognizeText.extractTextFromImage(new ByteArrayInputStream(image), identifier, Language.english);
+		final List<ImageRecognitionResult> imageRecognitionResult = imageObjectClassifier.classifier(new ByteArrayInputStream(image), identifier);
+		
+		final List<String> result = new ArrayList<>();
+
+		try {
+			final String resultCar = ocrResultFilter.toResult(text, VehicleType.car);
+			result.add(resultCar);
+		}catch (Exception e) {
+		}
+		
+		try {
+			final String resultMotorbike = ocrResultFilter.toResult(text, VehicleType.motorbike);
+			result.add(resultMotorbike);
+		}catch (Exception e) {
+		}
+		
+		return ClassifierResult
+						.builder()
+						.imageRecognitionResult(imageRecognitionResult)
+						.ocrResult(OcrResult
+										.builder()
+										.identifier(identifier)
+										.inputFilename(file.getOriginalFilename())
+										.result(result)
+										.message("success")
+										.processTime(System.currentTimeMillis() - begin)
+										.build())
+						.build();
+	}
 	
 	@PostMapping("imageRecognition")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
@@ -37,7 +81,7 @@ public class OCRApi {
 	
 	@PostMapping("ocr/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
-	public OcrResponse ocr(
+	public OcrResult ocr(
 			@PathVariable(name = "language", required = false) final Language language,
 			@RequestParam("file") final MultipartFile file) throws IOException {
 		
@@ -47,13 +91,13 @@ public class OCRApi {
 		
 		final String[] text = recognizeText.extractTextFromImage(file.getInputStream(), identifier, language);
 		
-		final List<String> result = ocrResultFilter.toResult(text, () -> "none");
+		final String result = ocrResultFilter.toResult(text, () -> "none");
 		
-		return OcrResponse
+		return OcrResult
 				.builder()
 				.identifier(identifier)
 				.inputFilename(file.getOriginalFilename())
-				.result(result)
+				.result(Arrays.asList(result))
 				.message("success")
 				.processTime(System.currentTimeMillis() - begin)
 				.build();
@@ -61,7 +105,7 @@ public class OCRApi {
 	
 	@PostMapping("/ocr/car/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
-	public OcrResponse ocrCarPlate(
+	public OcrResult ocrCarPlate(
 			@PathVariable(name = "language", required = false) final Language language,
 			@RequestParam("file") final MultipartFile file) throws IOException {
 		
@@ -71,13 +115,13 @@ public class OCRApi {
 		
 		final String[] text = recognizeText.extractTextFromImage(file.getInputStream(), identifier, language);
 		
-		final List<String> result = ocrResultFilter.toResult(text, VehicleType.car);
+		final String result = ocrResultFilter.toResult(text, VehicleType.car);
 		
-		return OcrResponse
+		return OcrResult
 				.builder()
 				.identifier(identifier)
 				.inputFilename(file.getOriginalFilename())
-				.result(result)
+				.result(Arrays.asList(result))
 				.message("success")
 				.processTime(System.currentTimeMillis() - begin)
 				.build();
@@ -85,7 +129,7 @@ public class OCRApi {
 	
 	@PostMapping("ocr/motorbike/{language}")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
-	public OcrResponse loadPlateMotorcycle(
+	public OcrResult loadPlateMotorcycle(
 			@PathVariable(name = "language", required = false) final Language language,
 			@RequestParam("file") final MultipartFile file) throws IOException {
 		
@@ -95,13 +139,13 @@ public class OCRApi {
 		
 		final String[] text = recognizeText.extractTextFromImage(file.getInputStream(), identifier, language);
 		
-		final List<String> result = ocrResultFilter.toResult(text, VehicleType.motorbike);
+		final String result = ocrResultFilter.toResult(text, VehicleType.motorbike);
 		
-		return OcrResponse
+		return OcrResult
 				.builder()
 				.identifier(identifier)
 				.inputFilename(file.getOriginalFilename())
-				.result(result)
+				.result(Arrays.asList(result))
 				.message("success")
 				.processTime(System.currentTimeMillis() - begin)
 				.build();

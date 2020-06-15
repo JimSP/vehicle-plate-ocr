@@ -104,7 +104,7 @@ public class ImageObjectClassifier {
 		            
 		            result.add(ImageRecognitionResult
 		            				.builder()
-		            				.label(CocoNames.get(clsIds.get(idx)))
+		            				.label(Names.get(clsIds.get(idx)))
 		            				.accuracy(confs.get(idx))
 		            				.x(box.tl().x)
 		            				.y(box.tl().y)

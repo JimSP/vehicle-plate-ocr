@@ -1,5 +1,5 @@
 package br.com.cafebinario.ocr;
 
 public enum VehicleType implements OcrType {
-	car, motorbike
+	bicycle, car, motorbike, bus, truck
 }
