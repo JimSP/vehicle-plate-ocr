@@ -28,23 +28,29 @@ public class RecognizeText {
 		
 		final File cvtFile = ToCvtTransform.toCvtFile(file, identifier);
 
+		return extractTextFromImage(cvtFile.getAbsolutePath(), identifier, language);
+	}
+	
+	public String[] extractTextFromImage(final String cvtFile, final String identifier, final Language language) {
+
+		final File file = new File(cvtFile);
+		
 		try {
 			switch (language) {
 			case portuguese:
 				
-				return portuguese(cvtFile).split("[|\\n ]");
+				return portuguese(file).split("[|\\n ]");
 				
 			case english:
 				
-				return english(cvtFile).split("[|\\n ]");
+				return english(file).split("[|\\n ]");
 
 			default:
 				
-				return portuguese(cvtFile).split("[|\\n ]");
+				return portuguese(file).split("[|\\n ]");
 			}
 		}finally {
-			file.delete();
-			cvtFile.delete();
+			//file.delete();
 		}	
 	}
 

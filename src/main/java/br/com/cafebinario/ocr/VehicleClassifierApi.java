@@ -30,6 +30,16 @@ public class VehicleClassifierApi {
 	@Autowired
 	private ImageObjectClassifier imageObjectClassifier;
 	
+	@Autowired
+	private CarPlateClassifier carPlateClassifier;
+	
+	@PostMapping("car-plate/classifier")
+	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
+	public String[] classifierNumberPlate(@RequestParam("file") final MultipartFile file) throws IOException {
+		
+		return carPlateClassifier.recognizer(file.getInputStream(), UUID.randomUUID().toString());
+	}
+	
 	@PostMapping("classifier")
 	@Log(logLevel = LogLevel.DEBUG, verboseMode = VerboseMode.ON)
 	public ClassifierResult classifier(
@@ -40,7 +50,7 @@ public class VehicleClassifierApi {
 		final String identifier = UUID.randomUUID().toString();
 		final byte[] image = file.getBytes();
 		
-		final String[] text = recognizeText.extractTextFromImage(new ByteArrayInputStream(image), identifier, Language.english);
+		final String[] text = carPlateClassifier.recognizer(new ByteArrayInputStream(image), identifier);
 		final List<ImageRecognitionResult> imageRecognitionResult = imageObjectClassifier.classifier(new ByteArrayInputStream(image), identifier);
 		
 		final List<String> result = new ArrayList<>();
